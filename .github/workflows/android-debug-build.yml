@@ -1,4 +1,4 @@
-name: Android Debug APK
+name: Android Standalone Test APK
 
 on:
   workflow_dispatch:
@@ -22,13 +22,13 @@ env:
   NODE_OPTIONS: --max-old-space-size=6144
 
 concurrency:
-  group: android-debug-apk-${{ github.ref }}
+  group: android-standalone-apk-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   android-debug:
     runs-on: ubuntu-latest
-    name: Android Debug APK
+    name: Android Standalone APK
     timeout-minutes: 90
 
     steps:
@@ -71,35 +71,35 @@ jobs:
             bun install --frozen-lockfile
           )
 
-      - name: Build debug APK
-        run: bash apps/mobile/scripts/android_build_debug.sh
+      - name: Build standalone APK
+        run: bash apps/mobile/scripts/android_build.sh
         env:
           ARCHS: ${{ inputs.archs }}
           EXPO_NO_TELEMETRY: "1"
           DONATION_PROMPT_ENABLED: "true"
           FEEDBACK_ENDPOINT_URL: ${{ vars.FEEDBACK_ENDPOINT_URL || vars.VITE_FEEDBACK_ENDPOINT_URL || 'https://feedback.mindwtr.app' }}
 
-      - name: Prepare debug artifacts
+      - name: Prepare standalone artifacts
         run: |
           set -euo pipefail
-          mkdir -p android-debug-artifacts
-          cp apps/mobile/build/*-debug.apk android-debug-artifacts/
+          mkdir -p android-standalone-artifacts
+          cp apps/mobile/build/*.apk android-standalone-artifacts/
           {
-            echo "Mindwtr Android debug APK"
+            echo "Mindwtr Android standalone test APK"
             echo "Commit: ${GITHUB_SHA}"
             echo "ABIs: ${{ inputs.archs }}"
             echo
             echo "Install with:"
             echo "adb install -r -d <apk>"
             echo
-            echo "This is a debuggable APK for local diagnostics and profiling."
-          } > android-debug-artifacts/README.txt
-          ls -la android-debug-artifacts
+            echo "This is a standalone test APK with the JS bundle embedded; no Metro server is required."
+          } > android-standalone-artifacts/README.txt
+          ls -la android-standalone-artifacts
 
-      - name: Upload Android debug APK
+      - name: Upload Android standalone APK
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: android-debug-apk
-          path: android-debug-artifacts/*
+          name: android-standalone-apk
+          path: android-standalone-artifacts/*
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days }}
